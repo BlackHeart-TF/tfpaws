@@ -1,9 +1,10 @@
+import serial
 import cv2
 import numpy as np
 import  tensorflow as tf
 from CocoLabels import get_label
-
-
+from RedLightDetector import detect_red_light,verify_laser_visibility
+from ESPTurret import send_command
 
 # Initialize TFLite interpreter
 interpreter = tf.lite.Interpreter(model_path='/home/noire/Downloads/lite-model_ssd_mobilenet_v1_1_metadata_2.tflite')#ssd_mobilenet_v1_1_default_1.tflite')
@@ -11,27 +12,6 @@ interpreter.allocate_tensors()
 
 # Define a minimum confidence threshold
 min_confidence = 0.4
-tracked_boxes = {}
-next_id = 1
-
-def assign_ids(boxes, scores, classes, tracked_boxes, next_id, threshold=0.2):
-    for i, box in enumerate(boxes):
-        if scores[i] >= min_confidence and classes[i] == 0:
-            closest_id, closest_distance = None, float('inf')
-
-            for id, old_box in tracked_boxes.items():
-                distance = np.linalg.norm(np.array(old_box[0][:2]) - np.array(box[:2]))
-
-                if distance < threshold and distance < closest_distance:
-                    closest_id, closest_distance = id, distance
-
-            if closest_id is not None:
-                tracked_boxes[closest_id] = box,classids[i]
-            else:
-                tracked_boxes[next_id] = box,classids[i]
-                next_id += 1
-    return next_id
-
 
 # Generate 20 distinct colors using hue spectrum divided evenly
 colors = []
@@ -48,6 +28,8 @@ for i, color in enumerate(colors):
 
 # Initialize Camera
 cap = cv2.VideoCapture(0)
+
+verify_laser_visibility(cap)
 
 while True:
     # Capture frame-by-frame
@@ -66,29 +48,47 @@ while True:
     # Extract bounding boxes
     boxes = Box_data[0, :, :4]
 
-    next_id = assign_ids(boxes, scores, classids, tracked_boxes, next_id,0.5)
-
     
     # Draw bounding boxes
-    for i, box in tracked_boxes.items():# enumerate(boxes):
-        #if scores[i] >= min_confidence and classids[i] == 0:
-            class_id = int(box[1])
-            label = f'{get_label(class_id)}{i}' #get_label(class_id)
-            color = color_map.get(i % 20, (255, 255, 255))  # Default to white
-            y1, x1, y2, x2 = box[0]
+    max_area = 0
+    selected_box = None
+    for i, box in enumerate(boxes):
+        if scores[i] >= min_confidence and classids[i] == 0:
+            y1, x1, y2, x2 = box
+            area = (x2 - x1) * (y2 - y1)
+            if area > max_area:
+                max_area = area
+                selected_box = box
+
+    if selected_box is not None:
+            color = (0, 0, 255)  # Default to red
+            y1, x1, y2, x2 = selected_box
             x1, y1, x2, y2 = int(x1*frame.shape[1]), int(y1*frame.shape[0]), int(x2*frame.shape[1]), int(y2*frame.shape[0])
             
+            center_x = (x1 + x2) // 2
+            center_y = (y1 + y2) // 2
+            scaled_center_x = int((center_x / frame.shape[1]) * 255)
+            scaled_center_y = int((center_y / frame.shape[0]) * 255)
+
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
             
-            text_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.75, 2)[0]
-            # Draw black background rectangle
-            cv2.rectangle(frame, (x2 - text_size[0] - 5, y1 - text_size[1] - 5), (x2, y1), (0, 0, 0), -1)
+            # Draw a red point at the scaled center
+            cv2.circle(frame, (center_x, center_y), 5, (0, 0, 255), -1)
 
-            # Draw white text
-            cv2.putText(frame, label, (x2 - text_size[0], y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), 2)
+            # Prepare byte array: 0x01, <scaled_center_x>, <scaled_center_y>, 0x00
+            send_command(scaled_center_x, 255-scaled_center_y, 0,1)
 
-            print(f"{scores[i]:.2f}  {label}")
 
+            print(f"person score: {scores[i]:.2f} ")
+    else:
+        send_command(None,None,False)
+
+    red_light_coords = detect_red_light(frame)
+    
+    if red_light_coords:
+        x, y = red_light_coords
+        cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)  # Draw a green dot
+    
     # Show frame with bounding boxes
     cv2.imshow('Frame', frame)
 
