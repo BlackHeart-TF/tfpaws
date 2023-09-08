@@ -4,7 +4,7 @@ import serial
 last_x = 127  # Default values
 last_y = 127
 last_laser = False
-def send_command(x_byte=None, y_byte=None, laser=None, scaling_factor=1.0, port='/dev/ttyUSB0'):
+def send_command(x_byte=None, y_byte=None, laser=None, scaling_factor=1.0, port='/dev/ttyUSB1'):
     global last_x, last_y, last_laser
 
     if x_byte is None:
