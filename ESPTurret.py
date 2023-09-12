@@ -1,5 +1,7 @@
 
 import serial
+import serial.tools.list_ports
+import sys
 
 last_x = 127  # Default values
 last_y = 127
@@ -26,3 +28,32 @@ def send_command(x_byte=None, y_byte=None, laser=None, scaling_factor=1.0, port=
             ser.write(command.encode())
 
     last_x, last_y, last_laser = avg_x, avg_y, laser
+
+
+def GetSerial():
+    ports = list(serial.tools.list_ports.comports())
+    if sys.platform.startswith('win'):
+        # Windows
+        com_ports = [port.device for port in ports if port.device.startswith("COM")]
+        if not com_ports:
+            return None
+        com_numbers = [int(port.replace("COM", "")) for port in com_ports]
+        return f"COM{max(com_numbers)}"
+    else:
+        # Linux
+        acm_ports = [port.device for port in ports if port.device.startswith("/dev/ttyACM")]
+        usb_ports = [port.device for port in ports if port.device.startswith("/dev/ttyUSB")]
+        
+        all_ports = acm_ports + usb_ports
+        if not all_ports:
+            return None
+
+        # Extracting numbers from the port string and returning the highest one
+        port_numbers = [int(port.split('/')[-1].replace("ttyACM", "").replace("ttyUSB", "")) for port in all_ports]
+        highest_port_num = max(port_numbers)
+
+        if f"/dev/ttyACM{highest_port_num}" in all_ports:
+            return f"/dev/ttyACM{highest_port_num}"
+        else:
+            return f"/dev/ttyUSB{highest_port_num}"
+
