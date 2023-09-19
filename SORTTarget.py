@@ -12,7 +12,11 @@ interpreter.allocate_tensors()
 min_confidence = 0.4
 
 # Initialize Camera
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture("http://192.168.2.130:81/stream")
+
+if not cap.isOpened():
+    print("Error: Couldn't open the MJPEG stream.")
+    exit()
 
 # Initialize SORT tracker
 tracker = Sort()
