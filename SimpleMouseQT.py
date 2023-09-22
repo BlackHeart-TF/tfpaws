@@ -10,7 +10,7 @@ class App(QMainWindow):
         super().__init__()
 
         # Serial setup
-        serport = GetSerial()
+        serport = "/dev/ttyUSB0"#GetSerial()
         print(f"Port: {serport}")
         self.ser = serial.Serial(serport, 115200, timeout=1) 
         self.initUI()

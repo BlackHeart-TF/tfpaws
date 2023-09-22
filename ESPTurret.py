@@ -1,29 +1,30 @@
-
 import serial
 import serial.tools.list_ports
 import sys
 
-last_x = 127  # Default values
-last_y = 127
+last_x = 0.5  # Default values
+last_y = 0.5
 last_laser = False
-def send_command(x_byte=None, y_byte=None, laser=None, scaling_factor=1.0, port='/dev/ttyUSB0'):
-    global last_x, last_y, last_laser
 
-    if x_byte is None:
-        x_byte = last_x
-    if y_byte is None:
-        y_byte = last_y
+def send_command(x_pos:float=None, y_pos:float=None, laser=None, port='/dev/ttyUSB0'):
+    global last_x, last_y, last_laser
+    #print(f"{x_pos} {y_pos}")
+    if x_pos is None:
+        x_pos = last_x
+    if y_pos is None:
+        y_pos = last_y
     if laser is None:
         laser = last_laser
 
-    scaled_x = min(255, int(x_byte * scaling_factor))
-    scaled_y = min(255, int(y_byte * scaling_factor))
-    avg_x = (last_x + scaled_x) // 2
-    avg_y = (last_y + scaled_y) // 2
-
+    scaled_x = max(min(1, x_pos),0)
+    scaled_y = max(min(1, y_pos),0)
+    #print(f"last: {last_x} {last_y} scaled: {scaled_x} {scaled_y}")
+    avg_x = (last_x + scaled_x) / 2.0
+    avg_y = (last_y + scaled_y) / 2.0
+    #print(f"avg: {avg_x} {avg_y}")
     if scaled_x != last_x or scaled_y != last_y or laser != last_laser:
         command = f"move,{avg_x},{avg_y},{127 if laser else 0}\r\n"
-        
+        #print(command)
         with serial.Serial(port, 115200) as ser:
             ser.write(command.encode())
 
@@ -44,7 +45,7 @@ def GetSerial():
         acm_ports = [port.device for port in ports if port.device.startswith("/dev/ttyACM")]
         usb_ports = [port.device for port in ports if port.device.startswith("/dev/ttyUSB")]
         
-        all_ports = acm_ports + usb_ports
+        all_ports = usb_ports + acm_ports
         if not all_ports:
             return None
 
