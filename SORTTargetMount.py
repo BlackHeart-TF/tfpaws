@@ -11,13 +11,13 @@ interpreter = tf.lite.Interpreter(model_path='/home/noire/Downloads/lite-model_s
 interpreter.allocate_tensors()
 
 # Define a minimum confidence threshold
-min_confidence = 0.4
+min_confidence = 0.5
 # Proportional control constants
 KP_X = 0.00025
 KP_Y = 0.00025
 
 # Initialize Camera
-cap = cv2.VideoCapture("http://192.168.2.130:81/stream")
+cap = cv2.VideoCapture("http://192.168.2.202:81/stream")
 
 if not cap.isOpened():
     print("Error: Couldn't open the MJPEG stream.")
@@ -29,7 +29,7 @@ tracker = Sort()
 # Initialize variables for the focused object
 focused_track_id = None
 ret, frame = cap.read()
-frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+#frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
 frame_height, frame_width, _ = frame.shape
 FRAME_CENTER_Y = frame_height/2
 FRAME_CENTER_X = frame_width /2
@@ -41,7 +41,7 @@ while True:
     ret, frame = cap.read()
     if not ret:
         break
-    frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    #frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
     # Inference
     input_image = cv2.resize(frame, (300, 300)).astype(np.uint8)
     input_details = interpreter.get_input_details()
@@ -106,7 +106,7 @@ while True:
         cv2.putText(frame, str(focused_track_id), (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, red, 2)
         center_x = (x1 + x2) // 2
         center_y = (y1 + y2) // 2
-        error_x = -(FRAME_CENTER_X - center_x)
+        error_x = (FRAME_CENTER_X - center_x)
         error_y = -(FRAME_CENTER_Y - center_y)
         print(f"error: {error_x} {error_y}")
         servo_movement_x = KP_X * error_x

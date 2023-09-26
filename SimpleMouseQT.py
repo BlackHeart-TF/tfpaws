@@ -29,13 +29,13 @@ class App(QMainWindow):
         x, y = event.x(), event.y()
 
         # Map x, y to 0-255 range
-        int8_x = int(255 * (x / self.width()))
-        int8_y = int(255 * (y / self.height()))
+        int8_x = float(1 * (x / self.width()))
+        int8_y = float(1 * (y / self.height()))
         command = f"move,{int8_x},{int8_y},0\r\n"  # Laser power is set to 0 in this example
         print(command)
         self.ser.write(command.encode())
         self.ser.flush()
-
+ 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = App()
