@@ -40,8 +40,9 @@ class SmoothServo:
         #print(f"effective_movement: {effective_movement}")
         # Update the current position and move the servo
         #print(f"cutoff_movement: {effective_movement}")
-        self.current_position += effective_movement
-        self.move_servo_to_position(self.current_position)
+        if effective_movement != 0:
+            self.current_position += effective_movement
+            self.move_servo_to_position(self.current_position)
         #print(f"current_position: {self.current_position}")
         # Update the last moved time
         self.last_moved_time = utime.ticks_ms()
@@ -51,7 +52,8 @@ class SmoothServo:
 
 
     def move_servo_to_position(self, position):
-        duty = int(position  * (115 - 40) + 40)
+        duty = int(position  * (114 - 40) + 40)
+        print(duty)
         self.servo.duty(duty)
 
     def compute_movement_factor(self):

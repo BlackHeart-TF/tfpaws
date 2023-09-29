@@ -14,7 +14,7 @@ def servoloop():
     while not exiting:
         servo_x.do_loop()
         servo_y.do_loop()
-        sleep(0.01)
+        sleep(0.02)
 
 def read_commands():
     while True:
@@ -70,8 +70,8 @@ def Run():
     global servo_y
     global laser
     # Define servos and laser pins
-    servo_x = SmoothServo(2,fixed_step_size=0.005)  # Set frequency to 50Hz for servos
-    servo_y = SmoothServo(5,fixed_step_size=0.005)
+    servo_x = SmoothServo(2,fixed_step_size=0.02)  # Set frequency to 50Hz for servos
+    servo_y = SmoothServo(5,fixed_step_size=0.02)
     laser = machine.PWM(machine.Pin(13))
     _thread.start_new_thread(servoloop, ())
     while True:

@@ -6,7 +6,7 @@ last_x = 0.5  # Default values
 last_y = 0.5
 last_laser = False
 
-def send_command(x_pos:float=None, y_pos:float=None, laser=None, port='/dev/ttyUSB2'):
+def send_command(x_pos:float=None, y_pos:float=None, laser=None, port='/dev/ttyUSB1'):
     global last_x, last_y, last_laser
     #print(f"{x_pos} {y_pos}")
     if x_pos is None:
